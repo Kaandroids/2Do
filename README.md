@@ -16,19 +16,21 @@ This project follows **Clean Architecture** principles, utilizing **SOLID** desi
 
 * **Core:** Java 21, Spring Boot 3.4
 * **Database:** PostgreSQL (Containerized via Docker)
+* **Testing:** JUnit 5, Mockito
 * **Security:** Spring Security 6, JWT Authentication & Authorization
-* **ORM & Mapping:** Hibernate / JPA, MapStruct (Compile-time mapping)
+* **ORM & Mapping:** Hibernate / JPA, MapStruct
 * **Tools:** Docker & Docker Compose, Lombok, Maven
 * **Documentation:** OpenAPI (Swagger UI)
 
 ## 🏗 Key Features & Architecture
 
 * **Role-Based Access Control (RBAC):** Granular permission management for `ADMIN` and `USER` roles using Spring Security `PreAuthorize`.
+* **Task Management:** Full CRUD operations for managing tasks with ownership security (Users can only access their own tasks).
 * **Stateless Authentication:** Secure and scalable authentication via JWT.
 * **DTO Pattern:** Strict separation between persistence entities and API exposure layers.
-* **Performance:** Utilizes `MapStruct` for high-performance, type-safe object mapping.
-* **Validation:** Robust input validation using Jakarta Validation (`@Valid`, `@NotBlank`, etc.).
-* **Containerization:** Fully dockerized environment for easy deployment and consistency.
+* **Unit Testing:** Comprehensive unit tests using **JUnit 5** and **Mockito** to ensure business logic reliability.
+* **Performance:** Utilizes `MapStruct` for high-performance, type-safe object mapping and `FetchType.LAZY` for database optimization.
+* **Validation:** Robust input validation using Jakarta Validation (`@Valid`, `@NotBlank`, `@FutureOrPresent`).
 
 ## 🚀 Getting Started
 
@@ -79,6 +81,31 @@ The system implements a dual-role mechanism:
 | :--- | :--- |
 | **ROLE_USER** | Can manage their own tasks and view their own profile. |
 | **ROLE_ADMIN** | Has full access to all resources, including user management and system-wide task oversight. |
+
+### 📝 Task Endpoints
+
+| Method | Endpoint | Description | Access |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/v1/tasks` | Create a new task | USER, ADMIN |
+| `GET` | `/api/v1/tasks` | Get all tasks for current user | USER, ADMIN |
+| `GET` | `/api/v1/tasks/{id}` | Get specific task details | USER, ADMIN |
+| `PUT` | `/api/v1/tasks/{id}` | Update an existing task | USER, ADMIN |
+| `DELETE` | `/api/v1/tasks/{id}` | Delete a task | USER, ADMIN |
+
+## 🧪 Running Tests
+
+> **⚠️ Important Note:**
+> This project is optimized for **Java 21 LTS**.
+> If you are using **Java 25 (Early Access)** or newer, you may encounter compatibility issues with testing libraries (like Mockito/ByteBuddy).
+> Please ensure your `JAVA_HOME` environment variable is set to **JDK 21** before running the wrapper.
+
+The application covers business logic with Unit Tests using **JUnit 5** and **Mockito**.
+
+To run the tests using Maven Wrapper (ensures compatibility):
+```powershell
+./mvnw test
+```
+
 
 ## 🤝 Contact
 
