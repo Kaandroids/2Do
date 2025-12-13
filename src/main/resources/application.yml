@@ -1,0 +1,45 @@
+spring:
+  datasource:
+    # Database Connection Settings
+    url: jdbc:postgresql://localhost:5432/db_2do
+    username: admin
+    password: admin
+  jpa:
+    # Logging SQL queries (Disable in production for performance)
+    show-sql: true
+
+    # Disable Open Session In View to prevent database connection leaks in the view layer
+    open-in-view: false
+
+    hibernate:
+      # Automatically updates the database schema (Use 'validate' in production)
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+#
+# Custom Application Properties
+#
+application:
+  # Metadata for Swagger/OpenAPI documentation
+  title: 2DO API
+  version: 0.0.1-SNAPSHOT
+  description: A scalable, secure and robust Task Management REST API
+  contact:
+    name: Kaan
+    email: kaan403@icloud.com
+    url: https://github.com/Kaandroids
+
+  # Security & JWT Configuration
+  security:
+    jwt:
+      # Secret key used for signing JWTs (Must be 256-bit or higher)
+      secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+
+      # Access token expiration time in milliseconds (e.g., 86400000 ms = 24 hours)
+      expiration: 86400000
+
+      # Refresh token expiration time (e.g., 7 days)
+      refresh-token:
+        expiration: 604800000
