@@ -1,0 +1,42 @@
+# --- Spring Framework Configuration ---
+spring:
+  application:
+    name: 2Do-Test-Suite
+
+  # --- H2 In-Memory Database Configuration ---
+  # We use H2 for tests to avoid polluting the real PostgreSQL database.
+  datasource:
+    # DB_CLOSE_DELAY=-1: Keeps the database content as long as the JVM is alive.
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  # --- JPA & Hibernate Settings ---
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      # 'create-drop': Creates the schema when the application starts,
+      # and drops it when the application stops. Ensures a clean state for every test run.
+      ddl-auto: create-drop
+    show-sql: true # Logs SQL statements to the console (useful for debugging)
+    properties:
+      hibernate:
+        format_sql: true # Formats the logged SQL for better readability
+
+# --- OpenAPI / Swagger Configuration ---
+# We disable Swagger in tests to prevent startup overhead and unrelated errors.
+springdoc:
+  api-docs:
+    enabled: false
+
+# --- Custom Application Configuration (JWT) ---
+application:
+  security:
+    jwt:
+      # A random 256-bit (32-byte) hex key used ONLY for testing purposes.
+      # This allows the ApplicationContext to load without needing the real production key
+      secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      expiration: 86400000 # 1 day
+      refresh-token:
+        expiration: 604800000 # 7 days
