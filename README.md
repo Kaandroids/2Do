@@ -43,7 +43,7 @@ Follow these steps to get the project up and running on your local machine.
 
 1.  **Clone the repository**
     ```bash
-    git clone [https://github.com/kaandroids/2Do.git](https://github.com/kaandroids/2Do.git)
+    git clone https://github.com/kaandroids/2Do.git
     cd 2Do
     ```
 
