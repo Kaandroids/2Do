@@ -71,4 +71,28 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
+
+    /**
+     * Fallback handler for any unexpected exceptions not covered by specific handlers.
+     * <p>
+     * This acts as a safety net to prevent raw stack traces from being exposed to the client,
+     * ensuring security and consistent error formatting. Returns HTTP 500.
+     * </p>
+     *
+     * @param ex      The unexpected exception.
+     * @param request The HTTP request.
+     * @return A {@link ResponseEntity} with HTTP 500 status.
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex, HttpServletRequest request) {
+        ErrorResponse error = ErrorResponse.builder()
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .message("An unexpected error occurred: " + ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .path(request.getRequestURI())
+                .build();
+
+        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
 }
