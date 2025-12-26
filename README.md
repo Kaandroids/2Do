@@ -7,6 +7,10 @@
 ![CI/CD](https://img.shields.io/badge/GitHub_Actions-Enabled-2088FF?logo=github-actions)
 ![Security](https://img.shields.io/badge/JWT-Security-red)
 
+## 🚀 Live Demo
+Access the latest version of the application here:
+👉 **[2Do Web Application](https://gentle-cliff-06c31ee03.6.azurestaticapps.net/)**
+
 ## 📖 About The Project
 
 **2Do** is a robust, scalable, and secure Backend REST API designed to demonstrate enterprise-level software development practices. It provides a comprehensive solution for task management with role-based access control.
