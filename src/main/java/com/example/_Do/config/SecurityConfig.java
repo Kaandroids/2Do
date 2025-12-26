@@ -3,6 +3,7 @@ package com.example._Do.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -50,6 +51,7 @@ public class SecurityConfig {
 
                 // 2. Configure URL Authorization
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // Whitelist: Allow public access to specific endpoints without authentication
                         .requestMatchers(
                                 "/api/v1/auth/**",               // Login & Register endpoints
