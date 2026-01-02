@@ -1,24 +1,27 @@
 package com.example._Do.auth;
 
-
 import com.example._Do.config.JwtService;
 import com.example._Do.user.dto.RegisterRequest;
 import com.example._Do.user.entity.Role;
 import com.example._Do.user.entity.User;
+import com.example._Do.user.exception.InvalidCredentialsException;
+import com.example._Do.user.exception.UserAlreadyExistsException;
 import com.example._Do.user.mapper.UserMapper;
 import com.example._Do.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Nested;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -37,97 +40,117 @@ public class AuthenticationServiceTest {
     @InjectMocks
     private AuthenticationService authenticationService;
 
-    @Mock
-    private UserRepository userRepository;
-    @Mock
-    private PasswordEncoder passwordEncoder;
-    @Mock
-    private JwtService jwtService;
-    @Mock
-    private AuthenticationManager authenticationManager;
-    @Mock
-    private UserMapper userMapper;
+    @Mock private UserRepository userRepository;
+    @Mock private PasswordEncoder passwordEncoder;
+    @Mock private JwtService jwtService;
+    @Mock private AuthenticationManager authenticationManager;
+    @Mock private UserMapper userMapper;
 
-    @Test
-    @DisplayName("Should register a new user and return JWT token when request is valid")
-    void shouldRegisterUser_WhenRequestIsValid()
+    @Captor
+    private ArgumentCaptor<User> userArgumentCaptor;
+
+    @Nested
+    @DisplayName("Registration Tests")
+    class RegistrationTests {
+
+        @Test
+        @DisplayName("Success: Should hash password and force ROLE_USER")
+        void register_ShouldSucceed_WhenRequestIsValid() {
+            // GIVEN
+            RegisterRequest registerRequest = createSampleRegisterRequest();
+            User mappedUser = new User();
+
+            when(userRepository.existsByEmail(registerRequest.getEmail())).thenReturn(false);
+            when(userMapper.toEntity(registerRequest)).thenReturn(mappedUser);
+            when(passwordEncoder.encode(registerRequest.getPassword())).thenReturn("hashedPassword");
+            when(jwtService.generateToken(any())).thenReturn("validToken");
+
+            // ACT
+            AuthenticationResponse authenticationResponse = authenticationService.register(registerRequest);
+
+            // ASSERT & VERIFY
+            assertNotNull(authenticationResponse);
+            assertEquals("validToken", authenticationResponse.getToken());
+
+            verify(userRepository).save(userArgumentCaptor.capture());
+            User savedUser = userArgumentCaptor.getValue();
+
+            assertAll("Final User Object",
+                    () -> assertEquals("hashedPassword", savedUser.getPassword(), "Password should be hashed"),
+                    () -> assertEquals(Role.USER, savedUser.getRole(), "Role must be USER regardless of request"),
+                    () -> verify(passwordEncoder, times(1)).encode(anyString())
+            );
+
+        }
+
+        @Test
+        @DisplayName("Fail: Should throw UserAlreadyExistsException and stop execution")
+        void register_ShouldFail_WhenUserAlreadyExists() {
+            // GIVEN
+            RegisterRequest registerRequest = createSampleRegisterRequest();
+            when(userRepository.existsByEmail(registerRequest.getEmail())).thenReturn(true);
+
+            // ACT
+            assertThrows(UserAlreadyExistsException.class, () -> authenticationService.register(registerRequest));
+
+            // Verify Fail
+            verifyNoInteractions(userMapper, passwordEncoder, jwtService);
+            verify(userRepository, never()).save(any());
+        }
+
+    }
+
+    @Nested
+    @DisplayName("Authentication Tests")
+    class AuthenticationTests {
+
+        @Test
+        @DisplayName("Success: Should return token for valid credentials")
+        void authenticate_ShouldSucceed_WhenCredentialsAreValid() {
+            // GIVEN
+            AuthenticationRequest authenticationRequest = createSampleAuthenticationRequest();
+            User mockUser = User.builder()
+                    .email(authenticationRequest.getEmail())
+                    .password(authenticationRequest.getPassword())
+                    .build();
+
+            when(userRepository.findByEmail(authenticationRequest.getEmail())).thenReturn(Optional.of(mockUser));
+            when(jwtService.generateToken(mockUser)).thenReturn("validToken");
+
+            // ACT
+            AuthenticationResponse authenticationResponse = authenticationService.authenticate(authenticationRequest);
+
+            // ASSERT & VERIFY
+            assertNotNull(authenticationResponse);
+            assertEquals("validToken", authenticationResponse.getToken());
+
+            verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+
+        }
+
+        @Test
+        @DisplayName("Fail: Should return InvalidCredentialsException for invalid credentials")
+        void authenticate_ShouldFail_WhenCredentialsAreInvalid() {
+            // GIVEN
+            AuthenticationRequest authenticationRequest = createSampleAuthenticationRequest();
+            doThrow(new BadCredentialsException("Failed")).when(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+
+            // ACT & ASSERT
+            assertThrows(InvalidCredentialsException.class, () -> authenticationService.authenticate(authenticationRequest));
+            verifyNoInteractions(jwtService, userRepository);
+        }
+
+    }
+
+    // --- Helper Methods ---
+    private RegisterRequest createSampleRegisterRequest()
     {
-        // --- GIVEN
-        RegisterRequest request = new RegisterRequest("Kaan", "Test", "kaan@test.com", "password123");
-        String encodedPassword = "encodedPassword";
-        String mockJwtToken = "mockJwtToken";
-        User mockUser = User.builder()
-                .firstName("Kaan")
-                .lastName("Test")
-                .email("kaan@test.com")
-                .password("encodedPassword")
-                .role(Role.USER)
-                .build();
-
-        // Simulate request -> entity
-        when(userMapper.toEntity(request)).thenReturn(mockUser);
-
-        // Simulate password encoding
-        when(passwordEncoder.encode(request.getPassword())).thenReturn(encodedPassword);
-
-        // Simulate JWT generation
-        when(jwtService.generateToken(any(User.class))).thenReturn(mockJwtToken);
-
-        // --- ACT / WHEN
-        AuthenticationResponse response = authenticationService.register(request);
-
-        // --- ASSERT / THEN
-        assertNotNull(response, "Response should not be null");
-        assertEquals("mockJwtToken", response.getToken(), "Should return the generated JWT token");
-
-        // verify that the user was actually saved to the repository
-        verify(userRepository).save(any(User.class));
+        return new RegisterRequest("Kaan", "Test", "kaan@test.com", "password123");
     }
 
-    @Test
-    @DisplayName("Should authenticate user and return JWT token when credentials are correct")
-    void shouldAuthenticateUser_WhenCredentialsAreCorrect() {
-        // -- GIVEN
-        AuthenticationRequest request = new AuthenticationRequest("kaan@test.com", "password123");
-        String mockJwtToken = "mockJwtToken";
-        User mockUser = User.builder()
-                .firstName("Kaan")
-                .lastName("Test")
-                .email("kaan@test.com")
-                .password("encodedPassword")
-                .role(Role.USER)
-                .build();
-
-        // Simulate user retrieval from database
-        when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(mockUser));
-
-        // Simulate JWT generation for the found user
-        when(jwtService.generateToken(any(User.class))).thenReturn(mockJwtToken);
-
-        // --- ACT / WHEN
-        AuthenticationResponse response = authenticationService.authenticate(request);
-
-        // --- ASSERT / THEN
-        assertNotNull(response, "Response should not be null");
-        assertEquals("mockJwtToken", response.getToken(), "Should return the generated JWT token");
-
-        verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+    private AuthenticationRequest createSampleAuthenticationRequest()
+    {
+        return new AuthenticationRequest("Kaan", "password123");
     }
 
-    @Test
-    @DisplayName("Should throw exception when user is not found during authentication")
-    void shouldThrowException_WhenUserIsNotFound() {
-        // --- GIVEN
-        AuthenticationRequest request = new AuthenticationRequest("Kaan", "password123");
-
-        // Simulate case where user does not exist in database
-        when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.empty());
-
-        // --- ACT / WHEN & ASSERT / THEN
-        assertThrows(Exception.class, () -> authenticationService.authenticate(request),
-                "Should throw exception if user is not found");
-
-        // Ensure JWT service is never called
-        verify(jwtService, never()).generateToken(any(User.class));
-    }
 }
