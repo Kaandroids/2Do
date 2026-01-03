@@ -40,9 +40,9 @@ public class SecurityConfig {
     private final AuthenticationProvider authenticationProvider;
 
     @Autowired(required = false)
-    private final LogoutService logoutService;
+    private LogoutService logoutService;
     @Autowired(required = false)
-    private final ObjectMapper objectMapper;
+    private ObjectMapper objectMapper;
 
     /**
      * Configures the security filter chain.

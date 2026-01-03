@@ -14,6 +14,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 
+/**
+ * Service responsible for handling secure user logout in a stateless JWT environment.
+ */
 @Service
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "application.rate-limit.enabled", havingValue = "true", matchIfMissing = true)
@@ -22,6 +25,14 @@ public class LogoutService implements LogoutHandler {
     private final JwtBlacklistService jwtBlacklistService;
     private final JwtService jwtService;
 
+    /**
+     * Performs the logout operation by extracting the JWT from the request,
+     * calculating its remaining validity, and adding it to the global blacklist.
+     *
+     * @param request        The incoming HTTP request containing the Authorization header.
+     * @param response       The HTTP response.
+     * @param authentication The current authentication object.
+     */
     @Override
     public void logout(
             HttpServletRequest request,
