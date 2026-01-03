@@ -17,6 +17,12 @@ import org.springframework.context.annotation.Configuration;
 import java.time.Duration;
 
 
+/**
+ * Configuration class for Distributed Rate Limiting using Bucket4j and Redis.
+ * This configuration ensures that rate limit buckets are synchronized across
+ * multiple application instances (horizontally scaled) by using Redis as the
+ * centralized state store.
+ */
 @Configuration
 public class RateLimitingConfig {
 
@@ -32,6 +38,12 @@ public class RateLimitingConfig {
     @Value("${spring.data.redis.ssl.enabled}")
     private boolean redisSsl;
 
+    /**
+     * Initializes the RedisClient with SSL support, tailored for cloud providers
+     * like Azure Cache for Redis.
+     *
+     * @return Configured RedisClient for establishing connections to the Redis cluster.
+     */
     @Bean
     public RedisClient redisClient() {
         RedisURI.Builder builder = RedisURI.builder()
@@ -46,6 +58,16 @@ public class RateLimitingConfig {
         return RedisClient.create(builder.build());
     }
 
+    /**
+     * Configures the ProxyManager to handle distributed bucket state.
+     * Uses Lettuce as the underlying Redis driver and implements an
+     * expiration strategy to optimize Redis memory usage. Buckets are
+     * automatically evicted from Redis after 1 hour of inactivity to prevent
+     * state bloat.
+     *
+     * @param redisClient The primary Redis client.
+     * @return ProxyManager configured with Lettuce-based CAS (Compare-And-Swap) operations.
+     */
     @Bean
     public ProxyManager<String> proxyManager(RedisClient redisClient) {
         StatefulRedisConnection<String, byte[]> connection = redisClient.connect(
