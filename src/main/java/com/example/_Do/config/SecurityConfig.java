@@ -55,21 +55,26 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource) throws Exception {
         http
                 // Logout
-                .logout(logout -> logout.
-                        logoutUrl("/api/v1/auth/logout")
-                        .addLogoutHandler(logoutService)
-                        .logoutSuccessHandler(((request, response, authentication) -> {
-                            response.setStatus(HttpServletResponse.SC_OK);
-                            response.setContentType("application/json");
+                .logout(logout -> {
+                    if (logoutService != null) {
+                            logout.
+                                    logoutUrl("/api/v1/auth/logout")
+                                    .addLogoutHandler(logoutService)
+                                    .logoutSuccessHandler(((request, response, authentication) -> {
+                                                response.setStatus(HttpServletResponse.SC_OK);
+                                                response.setContentType("application/json");
 
-                            Map<String, String> responseBody = new HashMap<>();
-                            responseBody.put("message", "Logout successful");
-                            responseBody.put("status", "200");
+                                                Map<String, String> responseBody = new HashMap<>();
+                                                responseBody.put("message", "Logout successful");
+                                                responseBody.put("status", "200");
 
-                            response.getWriter().write(objectMapper.writeValueAsString(responseBody));
-                            })
-                        )
-                )
+                                                response.getWriter().write(objectMapper.writeValueAsString(responseBody));
+
+                                    }));
+                    } else {
+                        logout.disable();
+                    }
+                })
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
                 // Disable CSRF (Cross-Site Request Forgery)

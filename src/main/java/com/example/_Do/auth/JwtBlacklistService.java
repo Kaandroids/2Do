@@ -7,6 +7,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 
+/**
+ * Service responsible for managing the lifecycle of invalidated JWT tokens.
+ */
 @Service
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "application.rate-limit.enabled", havingValue = "true", matchIfMissing = true)
